@@ -2,26 +2,26 @@ import strformat
 
 type
         Chip8 = object
-                opcode: int
-                memory: array[0..4095, int]
+                opcode: uint16
+                memory: array[0..4095, uint16]
                 drawFlag: bool
-                V: array[0..16, int8]
-                I: int16
-                pc: int16
-                gfx: array[0..2047, int8]
-                delay_timer: int8
-                sound_timer: int8
-                stack: array[0..16, int16]
-                sp: int16
-                key: array[0..16, int8]
+                V: array[0..16, uint8]
+                I: uint16
+                pc: uint16
+                gfx: array[0..2047, uint8]
+                delay_timer: uint8
+                sound_timer: uint8
+                stack: array[0..16, uint16]
+                sp: uint16
+                key: array[0..16, uint8]
 
-var chip8_fontset: array[0..79, int8]
+var chip8_fontset: array[0..79, uint8]
 var bufferSize: int = 80
-var buffer: array[0..79, int8]
+var buffer: array[0..79, uint8]
 
 for i in countup(0, 79):
         chip8_fontset[i] = 1
-        buffer[i] = int8(i + 1)
+        buffer[i] = uint8(i + 1)
 
 var myChip8 = Chip8(drawFlag: false)
 
@@ -49,16 +49,42 @@ proc emulateCycle(chip8: var Chip8): int =
 
         # Fetch Opcode
         chip8.opcode = (chip8.memory[chip8.pc] shl 8) or chip8.memory[chip8.pc + 1]
-        echo fmt("Unknown opcode {chip8.opcode:#b}")
 
-        # Decode Opcode
+        # Decode and Execute Opcode
         case chip8.opcode and 0xF000
-        of 0x0099:
-                echo "Not implemented"
+        of 0x2000:
+                chip8.stack[chip8.sp] = chip8.pc
+                chip8.sp = chip8.sp + 1
+                chip8.pc = chip8.opcode and 0x0FFF
+        of 0x8000:
+                case chip8.opcode and 0x000F
+                of 0x0004:
+                        if(chip8.V[(chip8.opcode and 0x00F0) shr 4] > (0xFF - chip8.V[(chip8.opcode and 0x0F00) shr 8])):
+                                chip8.V[0xF] = 1
+                        else:
+                                chip8.V[0xF] = 0
+                        chip8.V[(chip8.opcode and 0x0F00) shr 8] += chip8.V[(chip8.opcode and 0x00F0) shr 4]
+                        chip8.pc += 2
+                        echo fmt("Opcode needs testing: {chip8.opcode:#x}")
+                else:
+                        echo fmt("Unknown opcode {chip8.opcode:#x}")
+        of 0xA000:
+                chip8.I = chip8.opcode and 0x0FFF
+                chip8.pc += 2
+                echo fmt("Opcode needs testing: {chip8.opcode:#x}")
+        of 0xF000:
+                case chip8.opcode and 0x00FF
+                of 0x0033:
+                        chip8.memory[chip8.I] = uint16(int(chip8.V[(chip8.opcode and 0x0F00) shr 8]) / 100)
+                        chip8.memory[chip8.I + 1] = uint16(int(int(chip8.V[(chip8.opcode and 0x0F00) shr 8]) / 10) mod 10)
+                        chip8.memory[chip8.I + 2] = uint16((int(chip8.V[(chip8.opcode and 0x0F00) shr 8]) mod 100) mod 10)
+                        chip8.pc += 2
+                        echo fmt("Opcode needs testing: {chip8.opcode:#x}")
+                else:
+                        echo fmt("Unknown opcode {chip8.opcode:#x}")
         else:
-                echo fmt("Unknown opcode {chip8.opcode:#16b}")
+                echo fmt("Unknown opcode {chip8.opcode:#x}")
 
-        # Execute Opcode
 
         # Update timers
         if chip8.delay_timer > 0:
