@@ -26,10 +26,10 @@ proc main(): int =
         discard myChip8.initialize()
         discard myChip8.loadGame("pong")
 
-        for i in countup(1, 1):
+        for i in countup(1, 10):
                 discard myChip8.emulateCycle()
 
-                if myChip8.drawFlag or true:
+                if myChip8.drawFlag:
                         discard drawGraphics()
 
                 discard myChip8.setKeys()
