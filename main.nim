@@ -8,7 +8,6 @@ proc setupInput(): int =
         return 0
 
 proc drawGraphics(): int = 
-        echo "Draw"
         var line: string = ""   
         for i in countup(0, 31):
                 line = ""
