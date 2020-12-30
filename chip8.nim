@@ -54,7 +54,7 @@ proc initialize(chip8: var Chip8): int =
         return 0
 
 proc loadGame(chip8: var Chip8, title: string): int =
-        var programStrm = newFileStream("tetris.c8", fmRead)
+        var programStrm = newFileStream(title, fmRead)
 
         var i: int = 0
         while not programStrm.atEnd():
@@ -104,12 +104,22 @@ proc emulateCycle(chip8: var Chip8): int =
                 of 0x0000:
                         chip8.V[(chip8.opcode and 0x0F00) shr 8] = chip8.V[(chip8.opcode and 0x00F0) shr 4]
                         chip8.pc += 2
+                of 0x0002:
+                        chip8.V[(chip8.opcode and 0x0F00) shr 8] = chip8.V[(chip8.opcode and 0x0F00) shr 8] and chip8.V[(chip8.opcode and 0x00F0) shr 4]
+                        chip8.pc += 2
                 of 0x0004:
                         if(chip8.V[(chip8.opcode and 0x00F0) shr 4] > (uint8(0xFF) - chip8.V[(chip8.opcode and 0x0F00) shr 8])):
                                 chip8.V[0xF] = 1
                         else:
                                 chip8.V[0xF] = 0
                         chip8.V[(chip8.opcode and 0x0F00) shr 8] += chip8.V[(chip8.opcode and 0x00F0) shr 4]
+                        chip8.pc += 2
+                of 0x0005:
+                        if(chip8.V[(chip8.opcode and 0x0F00) shr 8] - chip8.V[(chip8.opcode and 0x00F0) shr 4] < (uint8(0x00))):
+                                chip8.V[0xF] = 1
+                        else:
+                                chip8.V[0xF] = 0
+                        chip8.V[(chip8.opcode and 0x0F00) shr 8] -= chip8.V[(chip8.opcode and 0x00F0) shr 4]
                         chip8.pc += 2
                 else:
                         echo fmt("Unknown opcode {chip8.opcode:#x}")
@@ -162,13 +172,24 @@ proc emulateCycle(chip8: var Chip8): int =
                 of 0x0015:
                         chip8.delay_timer = chip8.V[(chip8.opcode and 0x0F00) shr 8]
                         chip8.pc += 2
+                of 0x0018:
+                        chip8.sound_timer = chip8.V[(chip8.opcode and 0x0F00) shr 8]
+                        chip8.pc += 2
                 of 0x001E:
                         chip8.I += chip8.V[(chip8.opcode and 0x0F00) shr 8]
+                        chip8.pc += 2
+                of 0x0029:
+                        chip8.I = chip8.memory[chip8.V[(chip8.opcode and 0x0F00) shr 8] * 5 + 0x50]
                         chip8.pc += 2
                 of 0x0033:
                         chip8.memory[chip8.I] = uint8(int(chip8.V[(chip8.opcode and 0x0F00) shr 8]) / 100)
                         chip8.memory[chip8.I + 1] = uint8(int(int(chip8.V[(chip8.opcode and 0x0F00) shr 8]) / 10) mod 10)
                         chip8.memory[chip8.I + 2] = uint8((int(chip8.V[(chip8.opcode and 0x0F00) shr 8]) mod 100) mod 10)
+                        chip8.pc += 2
+                of 0x0065:
+                        var i: int = int((chip8.opcode and 0x0F00) shr 8)
+                        for j in countup(0, i):
+                                chip8.V[uint8(i)] = chip8.memory[chip8.I + uint16(j)]
                         chip8.pc += 2
                 else:
                         echo fmt("Unknown opcode {chip8.opcode:#x}")
@@ -186,8 +207,4 @@ proc emulateCycle(chip8: var Chip8): int =
         return 0
 
 proc setKeys(chip8: var Chip8): int =
-        var userResponse: string
-        doAssert readLineFromStdin("Input: ", line = userResponse)
-        if(userResponse[0] == 'a'):
-                chip8.key[9] = 1
         return 0
