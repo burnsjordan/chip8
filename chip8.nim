@@ -72,6 +72,24 @@ proc emulateCycle(chip8: var Chip8): int =
                 chip8.I = chip8.opcode and 0x0FFF
                 chip8.pc += 2
                 echo fmt("Opcode needs testing: {chip8.opcode:#x}")
+        of 0xD000:
+                var x: uint16 = chip8.V[(chip8.opcode and 0x0F00) shr 8]
+                var y: uint16 = chip8.V[(chip8.opcode and 0x00F0) shr 4]
+                var height: uint16 = chip8.opcode and 0x00F
+                var pixel: uint16
+
+                chip8.V[0xF] = 0
+                for yline in countup(0, int(height)):
+                        pixel = chip8.memory[chip8.I + uint16(yline)]
+                        for xline in countup(0, 7):
+                                if((pixel and uint16(0x80 shr xline)) != 0):
+                                        if(chip8.gfx[(int(x) + xline + ((int(y) + yline) * 64))] == uint16(1)):
+                                                chip8.V[0xF] = 1
+                                        chip8.gfx[int(x) + xline + (int(y) + yline) * 64] = chip8.gfx[int(x) + xline + (int(y) + yline) * 64] xor 1
+
+                chip8.drawFlag = true
+                chip8.pc += 2
+                echo fmt("Opcode needs testing: {chip8.opcode:#x}")
         of 0xF000:
                 case chip8.opcode and 0x00FF
                 of 0x0033:
