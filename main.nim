@@ -1,6 +1,11 @@
 include chip8
-import nimgl/[glfw, opengl]
+import nimgl/[glfw]
+import opengl
 
+type
+  MySeq = object
+    len, cap: int
+    data: UncheckedArray[cstring]
 
 proc keyProc(window: GLFWWindow, key: int32, scancode: int32,
              action: int32, mods: int32): void {.cdecl.} =
@@ -17,14 +22,15 @@ proc setupGraphics(): int =
         var vertices: array[0..8, float]
         vertices = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0]
         glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(sizeof(vertices)), addr vertices, GL_STATIC_DRAW)
-        glVertexAttribPointer(GLuint(0), GLint(3), EGL_FLOAT, GLboolean(false), GLsizei(3 * sizeof(GLfloat)), nil)
+        glVertexAttribPointer(GLuint(0), GLint(3), cGL_FLOAT, GLboolean(false), GLsizei(3 * sizeof(GLfloat)), nil)
         glEnableVertexAttribArray(0)
 
         # Create Vertex Shader
-        var vertexShaderSource: cstring = "#version 330 core\nlayout (location = 0) in vec3 aPos;\nvoid main()\n{\n   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n}\0"
+        # var vertexShaderSource: cstring = "#version 330 core\nlayout (location = 0) in vec3 aPos;\nvoid main()\n{\n   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n}\0"
         var vertexShader: GLuint
+        var vertexShaderArray = allocCStringArray(["#version 330 core\nlayout (location = 0) in vec3 aPos;\nvoid main()\n{\n   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n}\0"])
         vertexShader = glCreateShader(GL_VERTEX_SHADER)
-        glShaderSource(vertexShader, GLsizei(1), addr vertexShaderSource, nil)
+        glShaderSource(vertexShader, GLsizei(1), vertexShaderArray, nil)
         glCompileShader(vertexShader)
         var success: GLint
         var infoLog: array[512, cstring]
@@ -37,10 +43,11 @@ proc setupGraphics(): int =
         #         echo infoLog
 
         # Create Fragment Shader
-        var fragmentShaderSource: cstring = "#version 330 core\nout vec4 FragColor;\nvoid main()\n{\nFragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n}\n\0"
+        # var fragmentShaderSource: cstring = "#version 330 core\nout vec4 FragColor;\nvoid main()\n{\nFragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n}\n\0"
         var fragmentShader: GLuint
+        var fragmentShaderArray = allocCStringArray(["#version 330 core\nout vec4 FragColor;\nvoid main()\n{\nFragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n}\n\0"])
         fragmentShader = glCreateShader(GL_FRAGMENT_SHADER)
-        glShaderSource(fragmentShader, GLsizei(1), addr fragmentShaderSource, nil)
+        glShaderSource(fragmentShader, GLsizei(1), fragmentShaderArray, nil)
         glCompileShader(fragmentShader)
 
         # Check that compilation works
@@ -70,6 +77,9 @@ proc setupGraphics(): int =
 
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
+
+        deallocCStringArray(vertexShaderArray)
+        deallocCStringArray(fragmentShaderArray)
 
         return 0
 
@@ -105,13 +115,14 @@ proc main(): int =
         glfwWindowHint(GLFWOpenglProfile, GLFW_OPENGL_CORE_PROFILE)
         glfwWindowHint(GLFWResizable, GLFW_FALSE)
 
-        let w: GLFWWindow = glfwCreateWindow(256, 128, "Chip-8 Emulator")
+        let w: GLFWWindow = glfwCreateWindow(512, 256, "Chip-8 Emulator")
         if w == nil:
                 quit(-1)
 
         discard w.setKeyCallback(keyProc)
         w.makeContextCurrent()
-        glViewport(0, 0, 256, 128)
+        loadExtensions()
+        glViewport(0, 0, 512, 256)
 
         assert glfwInit()
         discard myChip8.initialize()
