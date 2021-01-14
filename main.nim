@@ -15,8 +15,8 @@ proc framebuffer_callback(window: GLFWWindow, width: int32, height: int32) =
 
 proc keyProc(window: GLFWWindow, key: int32, scancode: int32,
              action: int32, mods: int32): void {.cdecl.} =
-  if key == GLFWKey.ESCAPE and action == GLFWPress:
-    window.setWindowShouldClose(true)
+        if key == GLFWKey.ESCAPE and action == GLFWPress:
+                window.setWindowShouldClose(true)
 
 proc setupGraphics(): int =
         var VBO: GLuint
@@ -143,6 +143,40 @@ proc drawGraphics(w: GLFWWindow): int =
 proc processInput(w: GLFWWindow): int =
         if(getKey(w, GLFWKey.Escape) == GLFW_PRESS):
                 setWindowShouldClose(w, true)
+        for i in countup(0, len(myChip8.key)-1):
+                myChip8.key[i] = 0
+        if(getKey(w, GLFWKey.K1) == GLFW_PRESS):
+                myChip8.key[0] = 1
+        if(getKey(w, GLFWKey.K2) == GLFW_PRESS):
+                myChip8.key[1] = 1
+        if(getKey(w, GLFWKey.K3) == GLFW_PRESS):
+                myChip8.key[2] = 1
+        if(getKey(w, GLFWKey.K4) == GLFW_PRESS):
+                myChip8.key[3] = 1
+        if(getKey(w, GLFWKey.Q) == GLFW_PRESS):
+                myChip8.key[4] = 1
+        if(getKey(w, GLFWKey.W) == GLFW_PRESS):
+                myChip8.key[5] = 1
+        if(getKey(w, GLFWKey.E) == GLFW_PRESS):
+                myChip8.key[6] = 1
+        if(getKey(w, GLFWKey.R) == GLFW_PRESS):
+                myChip8.key[7] = 1
+        if(getKey(w, GLFWKey.A) == GLFW_PRESS):
+                myChip8.key[8] = 1
+        if(getKey(w, GLFWKey.S) == GLFW_PRESS):
+                myChip8.key[9] = 1
+        if(getKey(w, GLFWKey.D) == GLFW_PRESS):
+                myChip8.key[10] = 1
+        if(getKey(w, GLFWKey.F) == GLFW_PRESS):
+                myChip8.key[11] = 1
+        if(getKey(w, GLFWKey.Z) == GLFW_PRESS):
+                myChip8.key[12] = 1
+        if(getKey(w, GLFWKey.X) == GLFW_PRESS):
+                myChip8.key[13] = 1
+        if(getKey(w, GLFWKey.C) == GLFW_PRESS):
+                myChip8.key[14] = 1
+        if(getKey(w, GLFWKey.V) == GLFW_PRESS):
+                myChip8.key[15] = 1
         return 0
 
 proc main(): int =
@@ -154,7 +188,7 @@ proc main(): int =
         glfwWindowHint(GLFWOpenglForwardCompat, GLFW_TRUE) # Used for Mac
         glfwWindowHint(GLFWOpenglProfile, GLFW_OPENGL_CORE_PROFILE)
 
-        let w: GLFWWindow = glfwCreateWindow(800, 600, "Chip-8 Emulator", nil, nil)
+        let w: GLFWWindow = glfwCreateWindow(512, 256, "Chip-8 Emulator", nil, nil)
         if w == nil:
                 glfwTerminate()
                 quit(-1)
@@ -163,11 +197,11 @@ proc main(): int =
         # w.setFramebufferSizeCallback(GLFWFramebuffersizeFun)
         w.makeContextCurrent()
         loadExtensions()
-        glViewport(0, 0, 800, 600)
+        glViewport(0, 0, 512, 256)
 
         assert glfwInit()
         discard myChip8.initialize()
-        discard myChip8.loadGame("TETRIS.ch8")
+        discard myChip8.loadGame("Pong.ch8")
         discard setupGraphics()
         discard setupInput()
 
@@ -180,8 +214,8 @@ proc main(): int =
 
                 if myChip8.drawFlag:
                         discard drawGraphics(w)
+                        w.swapBuffers()
 
-                w.swapBuffers()
                 glfwPollEvents()
 
                 discard myChip8.setKeys()
