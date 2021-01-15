@@ -70,6 +70,9 @@ proc emulateCycle(chip8: var Chip8): int =
 
         # Fetch Opcode
         chip8.opcode = (uint16(chip8.memory[chip8.pc]) shl 8) or chip8.memory[chip8.pc + 1]
+        
+        # Set draw flag to false so the screen isn't drawn when it doesn't need to
+        chip8.drawFlag = false
 
         # Decode and Execute Opcode
         case chip8.opcode and 0xF000
