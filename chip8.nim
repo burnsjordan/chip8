@@ -85,7 +85,7 @@ proc emulateCycle(chip8: var Chip8): int =
                         chip8.pc = chip8.stack[chip8.sp]
                         chip8.pc += 2
                 else:
-                        echo fmt("Unknown opcode {chip8.opcode:#x}")
+                        echo fmt("Not implemented opcode: {chip8.opcode:#x}")
         of 0x1000:
                 chip8.pc = chip8.opcode and 0x0FFF
         of 0x2000:
@@ -142,6 +142,13 @@ proc emulateCycle(chip8: var Chip8): int =
                         chip8.V[0xF] = chip8.V[(chip8.opcode and 0x0F00) shr 8] and 0x000F
                         chip8.V[(chip8.opcode and 0x0F00) shr 8] = chip8.V[(chip8.opcode and 0x0F00) shr 8] shr 1
                         chip8.pc += 2
+                of 0x0007:
+                        if(chip8.V[(chip8.opcode and 0x0F00) shr 8] > chip8.V[(chip8.opcode and 0x00F0) shr 4]):
+                                chip8.V[0xF] = 0
+                        else:
+                                chip8.V[0xF] = 1
+                        chip8.V[(chip8.opcode and 0x0F00) shr 8] = chip8.V[(chip8.opcode and 0x00F0) shr 4] - chip8.V[(chip8.opcode and 0x0F00) shr 8]
+                        chip8.pc += 2
                 of 0x000E:
                         chip8.V[0xF] = chip8.V[(chip8.opcode and 0x0F00) shr 8] shr 15
                         chip8.V[(chip8.opcode and 0x0F00) shr 8] = chip8.V[(chip8.opcode and 0x0F00) shr 8] shl 1
@@ -155,6 +162,8 @@ proc emulateCycle(chip8: var Chip8): int =
         of 0xA000:
                 chip8.I = chip8.opcode and 0x0FFF
                 chip8.pc += 2
+        of 0xB000:
+                chip8.pc = (chip8.opcode and 0x0FFF) + chip8.V[0]
         of 0xC000:
                 let r = rand(255)
                 chip8.V[(chip8.opcode and 0x0F00) shr 8] = uint8(uint8(r) and uint8(chip8.opcode and 0x00FF))
